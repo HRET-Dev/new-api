@@ -61,6 +61,11 @@ const monitoringSchema = z
         .number()
         .int()
         .min(1, 'Interval must be at least 1 minute'),
+      auto_test_disabled_channel_enabled: z.boolean(),
+      auto_test_disabled_channel_minutes: z.coerce
+        .number()
+        .int()
+        .min(1, 'Interval must be at least 1 minute'),
     }),
   })
   .superRefine((values, ctx) => {
@@ -105,6 +110,8 @@ type MonitoringSettingsSectionProps = {
     AutomaticRetryStatusCodes: string
     'monitor_setting.auto_test_channel_enabled': boolean
     'monitor_setting.auto_test_channel_minutes': number
+    'monitor_setting.auto_test_disabled_channel_enabled': boolean
+    'monitor_setting.auto_test_disabled_channel_minutes': number
   }
 }
 
@@ -122,6 +129,8 @@ type NormalizedMonitoringValues = {
   AutomaticRetryStatusCodes: string
   'monitor_setting.auto_test_channel_enabled': boolean
   'monitor_setting.auto_test_channel_minutes': number
+  'monitor_setting.auto_test_disabled_channel_enabled': boolean
+  'monitor_setting.auto_test_disabled_channel_minutes': number
 }
 
 const buildFormDefaults = (
@@ -141,6 +150,10 @@ const buildFormDefaults = (
       defaults['monitor_setting.auto_test_channel_enabled'],
     auto_test_channel_minutes:
       defaults['monitor_setting.auto_test_channel_minutes'],
+    auto_test_disabled_channel_enabled:
+      defaults['monitor_setting.auto_test_disabled_channel_enabled'],
+    auto_test_disabled_channel_minutes:
+      defaults['monitor_setting.auto_test_disabled_channel_minutes'],
   },
 })
 
@@ -164,6 +177,10 @@ const normalizeDefaults = (
     defaults['monitor_setting.auto_test_channel_enabled'],
   'monitor_setting.auto_test_channel_minutes':
     defaults['monitor_setting.auto_test_channel_minutes'],
+  'monitor_setting.auto_test_disabled_channel_enabled':
+    defaults['monitor_setting.auto_test_disabled_channel_enabled'],
+  'monitor_setting.auto_test_disabled_channel_minutes':
+    defaults['monitor_setting.auto_test_disabled_channel_minutes'],
 })
 
 const normalizeFormValues = (
@@ -186,6 +203,10 @@ const normalizeFormValues = (
     values.monitor_setting.auto_test_channel_enabled,
   'monitor_setting.auto_test_channel_minutes':
     values.monitor_setting.auto_test_channel_minutes,
+  'monitor_setting.auto_test_disabled_channel_enabled':
+    values.monitor_setting.auto_test_disabled_channel_enabled,
+  'monitor_setting.auto_test_disabled_channel_minutes':
+    values.monitor_setting.auto_test_disabled_channel_minutes,
 })
 
 export function MonitoringSettingsSection({
@@ -302,6 +323,68 @@ export function MonitoringSettingsSection({
                   </FormControl>
                   <FormDescription>
                     {t('How frequently the system tests all channels')}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='monitor_setting.auto_test_disabled_channel_enabled'
+              render={({ field }) => (
+                <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
+                  <div className='space-y-0.5'>
+                    <FormLabel className='text-base'>
+                      {t('Auto-recover disabled channels')}
+                    </FormLabel>
+                    <FormDescription>
+                      {t(
+                        'Periodically test auto-disabled channels and re-enable them when they recover'
+                      )}
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='monitor_setting.auto_test_disabled_channel_minutes'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    {t('Disabled channel test interval (minutes)')}
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type='number'
+                      min={1}
+                      step={1}
+                      value={
+                        typeof field.value === 'number' &&
+                        Number.isFinite(field.value)
+                          ? field.value
+                          : ''
+                      }
+                      onChange={(event) =>
+                        field.onChange(event.target.valueAsNumber)
+                      }
+                      name={field.name}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {t(
+                      'How frequently the system retests auto-disabled channels'
+                    )}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

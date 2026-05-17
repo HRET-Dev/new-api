@@ -1,0 +1,13 @@
+services:
+  new-api:
+    build: .
+    image: new-api:local
+    container_name: new-api-local
+    restart: always
+    ports:
+      - '3000:3000'
+    environment:
+      - TZ=Asia/Shanghai
+      - ERROR_LOG_ENABLED=true
+    volumes:
+      - ./data:/data

@@ -982,3 +982,68 @@ func AutomaticallyTestChannels() {
 		}
 	})
 }
+
+var autoTestDisabledChannelsOnce sync.Once
+
+func AutomaticallyTestDisabledChannels() {
+	if !common.IsMasterNode {
+		return
+	}
+	autoTestDisabledChannelsOnce.Do(func() {
+		for {
+			if !operation_setting.GetMonitorSetting().AutoTestDisabledChannelEnabled {
+				time.Sleep(1 * time.Minute)
+				continue
+			}
+			for {
+				frequency := operation_setting.GetMonitorSetting().AutoTestDisabledChannelMinutes
+				time.Sleep(time.Duration(int(math.Round(frequency))) * time.Minute)
+				common.SysLog("automatically testing auto-disabled channels")
+				_ = testAutoDisabledChannels()
+				common.SysLog("auto-disabled channel test finished")
+				if !operation_setting.GetMonitorSetting().AutoTestDisabledChannelEnabled {
+					break
+				}
+			}
+		}
+	})
+}
+
+var testAutoDisabledChannelsLock sync.Mutex
+var testAutoDisabledChannelsRunning bool
+
+func testAutoDisabledChannels() error {
+	testAutoDisabledChannelsLock.Lock()
+	if testAutoDisabledChannelsRunning {
+		testAutoDisabledChannelsLock.Unlock()
+		return errors.New("测试已在运行中")
+	}
+	testAutoDisabledChannelsRunning = true
+	testAutoDisabledChannelsLock.Unlock()
+
+	var channels []*model.Channel
+	err := model.DB.Where("status = ?", common.ChannelStatusAutoDisabled).Find(&channels).Error
+	if err != nil {
+		testAutoDisabledChannelsLock.Lock()
+		testAutoDisabledChannelsRunning = false
+		testAutoDisabledChannelsLock.Unlock()
+		return err
+	}
+
+	gopool.Go(func() {
+		defer func() {
+			testAutoDisabledChannelsLock.Lock()
+			testAutoDisabledChannelsRunning = false
+			testAutoDisabledChannelsLock.Unlock()
+		}()
+
+		for _, channel := range channels {
+			result := testChannel(channel, "", "", shouldUseStreamForAutomaticChannelTest(channel))
+			if service.ShouldEnableChannel(result.newAPIError, channel.Status) {
+				service.EnableChannel(channel.Id, common.GetContextKeyString(result.context, constant.ContextKeyChannelKey), channel.Name)
+			}
+			time.Sleep(common.RequestInterval)
+		}
+	})
+	return nil
+}
