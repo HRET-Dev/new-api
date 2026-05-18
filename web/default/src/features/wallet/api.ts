@@ -233,3 +233,28 @@ export async function completeOrder(
   const res = await api.post('/api/user/topup/complete', request)
   return res.data
 }
+
+/**
+ * Preview pending orders that would be deleted (admin only)
+ */
+export async function previewPendingOrders(
+  expireHours?: number
+): Promise<ApiResponse<{ items: TopupRecord[]; total: number; preview: number }>> {
+  const params = new URLSearchParams({
+    expire_hours: String(expireHours ?? 24),
+  })
+  const res = await api.get(`/api/user/topup/pending-preview?${params.toString()}`)
+  return res.data
+}
+
+/**
+ * Delete all pending orders older than expireHours (admin only)
+ */
+export async function deletePendingOrders(
+  expireHours?: number
+): Promise<ApiResponse<{ deleted: number }>> {
+  const res = await api.post('/api/user/topup/delete-pending', {
+    expire_hours: expireHours ?? 24,
+  })
+  return res.data
+}

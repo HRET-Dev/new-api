@@ -585,3 +585,29 @@ func RechargeWaffoPancake(tradeNo string) (err error) {
 
 	return nil
 }
+
+// DeletePendingTopUps 物理删除 create_time 早于 beforeTimestamp 的 pending 订单。
+// 返回删除行数。
+func DeletePendingTopUps(beforeTimestamp int64) (int64, error) {
+	result := DB.
+		Where("status = ? AND create_time < ?", common.TopUpStatusPending, beforeTimestamp).
+		Delete(&TopUp{})
+	return result.RowsAffected, result.Error
+}
+
+// previewPendingLimit 预览接口单次最多返回的订单条数
+const previewPendingLimit = 100
+
+// PreviewPendingTopUps 预览将被删除的 pending 订单，不执行删除。
+// 最多返回 previewPendingLimit 条，并返回符合条件的总数。
+func PreviewPendingTopUps(beforeTimestamp int64) (topups []*TopUp, total int64, err error) {
+	query := DB.Model(&TopUp{}).Where("status = ? AND create_time < ?", common.TopUpStatusPending, beforeTimestamp)
+	if err = query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	if err = query.Order("create_time asc").Limit(previewPendingLimit).Find(&topups).Error; err != nil {
+		return nil, 0, err
+	}
+	return topups, total, nil
+}
+

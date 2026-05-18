@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useState } from 'react'
-import { Search, Copy, Check, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, Copy, Check, ChevronLeft, ChevronRight, Trash2, AlertTriangle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { formatCurrencyFromUSD } from '@/lib/currency'
 import { formatNumber } from '@/lib/format'
@@ -37,6 +37,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
@@ -78,14 +79,21 @@ export function BillingHistoryDialog({
     keyword,
     loading,
     completing,
+    deleting,
+    previewing,
+    previewItems,
+    previewTotal,
     isAdmin,
     handlePageChange,
     handlePageSizeChange,
     handleSearch,
     handleCompleteOrder,
+    handlePreviewPendingOrders,
+    handleDeletePendingOrders,
   } = useBillingHistory()
 
   const [confirmTradeNo, setConfirmTradeNo] = useState<string | null>(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
   const { copyToClipboard, copiedText } = useCopyToClipboard({ notify: false })
 
   const totalPages = Math.ceil(total / pageSize)
@@ -96,6 +104,19 @@ export function BillingHistoryDialog({
       if (success) {
         setConfirmTradeNo(null)
       }
+    }
+  }
+
+  // 点击"清理未付订单"：先拉预览再打开弹窗
+  const handleOpenPreview = async () => {
+    const ok = await handlePreviewPendingOrders(24)
+    if (ok) setPreviewOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    const success = await handleDeletePendingOrders(24)
+    if (success) {
+      setPreviewOpen(false)
     }
   }
 
@@ -122,6 +143,22 @@ export function BillingHistoryDialog({
                   className='h-9 pl-10'
                 />
               </div>
+              {/* 管理员：一键删除长时间未支付订单 */}
+              {isAdmin && (
+                <Button
+                  variant='outline'
+                  size='sm'
+                  className='h-9 shrink-0 gap-1.5 text-destructive hover:text-destructive'
+                  onClick={handleOpenPreview}
+                  disabled={previewing || deleting || loading}
+                  title={t('Delete pending orders older than 24 hours')}
+                >
+                  <Trash2 className='h-4 w-4' />
+                  <span className='hidden sm:inline'>
+                    {previewing ? t('Loading...') : t('Clean Pending')}
+                  </span>
+                </Button>
+              )}
               <Select
                 items={[
                   { value: '10', label: t('10 / page') },
@@ -346,6 +383,94 @@ export function BillingHistoryDialog({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Preview & Confirm Delete Pending Orders Dialog */}
+      <Dialog open={previewOpen} onOpenChange={(o) => !deleting && setPreviewOpen(o)}>
+        <DialogContent className='flex max-h-[calc(100dvh-2rem)] flex-col max-sm:h-dvh max-sm:w-screen max-sm:max-w-none max-sm:rounded-none max-sm:p-4 sm:max-w-2xl'>
+          <DialogHeader>
+            <DialogTitle className='flex items-center gap-2'>
+              <AlertTriangle className='text-destructive h-4 w-4' />
+              {t('Clean Pending Orders')}
+            </DialogTitle>
+            <DialogDescription>
+              {previewTotal > previewItems.length
+                ? t(
+                    'Showing first {{preview}} of {{total}} pending orders older than 24 hours that will be permanently deleted.',
+                    { preview: previewItems.length, total: previewTotal }
+                  )
+                : t(
+                    '{{count}} pending orders older than 24 hours will be permanently deleted.',
+                    { count: previewTotal }
+                  )}
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* 预览列表 */}
+          <ScrollArea className='max-h-[50dvh] flex-1 pr-2'>
+            {previewItems.length === 0 ? (
+              <div className='text-muted-foreground flex h-32 items-center justify-center text-sm'>
+                {t('No pending orders found')}
+              </div>
+            ) : (
+              <div className='space-y-2'>
+                {previewItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className='bg-muted/40 flex items-center justify-between rounded-lg border px-3 py-2 text-sm'
+                  >
+                    <div className='min-w-0 flex-1 space-y-0.5'>
+                      <div className='flex items-center gap-2'>
+                        <span className='text-muted-foreground font-mono text-xs'>
+                          {item.trade_no}
+                        </span>
+                        {isAdmin && item.user_id != null && (
+                          <span className='text-muted-foreground text-xs'>
+                            {t('User ID')}: {item.user_id}
+                          </span>
+                        )}
+                      </div>
+                      <div className='text-muted-foreground text-xs'>
+                        {formatTimestamp(item.create_time)}
+                      </div>
+                    </div>
+                    <div className='ml-3 shrink-0 text-right'>
+                      <div className='text-sm font-medium'>
+                        {formatCurrencyFromUSD(item.amount, {
+                          digitsLarge: 2,
+                          digitsSmall: 2,
+                          abbreviate: false,
+                        })}
+                      </div>
+                      <div className='text-muted-foreground text-xs'>
+                        {getPaymentMethodName(item.payment_method, t)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+
+          <DialogFooter>
+            <Button
+              variant='outline'
+              onClick={() => setPreviewOpen(false)}
+              disabled={deleting}
+            >
+              {t('Cancel')}
+            </Button>
+            <Button
+              variant='destructive'
+              onClick={handleConfirmDelete}
+              disabled={deleting || previewTotal === 0}
+            >
+              {deleting
+                ? t('Deleting...')
+                : t('Delete {{count}} Orders', { count: previewTotal })}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

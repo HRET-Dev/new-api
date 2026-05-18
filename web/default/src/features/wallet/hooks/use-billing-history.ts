@@ -24,6 +24,8 @@ import {
   getUserBillingHistory,
   getAllBillingHistory,
   completeOrder,
+  previewPendingOrders,
+  deletePendingOrders,
   isApiSuccess,
 } from '../api'
 import type { TopupRecord } from '../types'
@@ -50,6 +52,10 @@ export function useBillingHistory(options: UseBillingHistoryOptions = {}) {
   const [keyword, setKeyword] = useState('')
   const [loading, setLoading] = useState(false)
   const [completing, setCompleting] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [previewing, setPreviewing] = useState(false)
+  const [previewItems, setPreviewItems] = useState<TopupRecord[]>([])
+  const [previewTotal, setPreviewTotal] = useState(0)
 
   /**
    * Fetch billing history
@@ -117,6 +123,79 @@ export function useBillingHistory(options: UseBillingHistoryOptions = {}) {
   )
 
   /**
+   * Preview pending orders that would be deleted (admin only)
+   */
+  const handlePreviewPendingOrders = useCallback(
+    async (expireHours = 24) => {
+      if (!isAdmin) {
+        toast.error(i18next.t('Admin access required'))
+        return false
+      }
+
+      setPreviewing(true)
+      try {
+        const response = await previewPendingOrders(expireHours)
+        if (isApiSuccess(response) && response.data) {
+          setPreviewItems(response.data.items || [])
+          setPreviewTotal(response.data.total || 0)
+          return true
+        } else {
+          toast.error(
+            response.message || i18next.t('Failed to load preview')
+          )
+          return false
+        }
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to preview pending orders:', error)
+        toast.error(i18next.t('Failed to load preview'))
+        return false
+      } finally {
+        setPreviewing(false)
+      }
+    },
+    [isAdmin]
+  )
+
+  /**
+   * Delete all pending orders older than expireHours (admin only)
+   */
+  const handleDeletePendingOrders = useCallback(
+    async (expireHours = 24) => {
+      if (!isAdmin) {
+        toast.error(i18next.t('Admin access required'))
+        return false
+      }
+
+      setDeleting(true)
+      try {
+        const response = await deletePendingOrders(expireHours)
+        if (isApiSuccess(response)) {
+          const deleted = response.data?.deleted ?? 0
+          toast.success(
+            i18next.t('Deleted {{count}} pending orders', { count: deleted })
+          )
+          await fetchBillingHistory()
+          return true
+        } else {
+          toast.error(
+            response.message || i18next.t('Failed to delete pending orders')
+          )
+          return false
+        }
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to delete pending orders:', error)
+        toast.error(i18next.t('Failed to delete pending orders'))
+        return false
+      } finally {
+        setDeleting(false)
+      }
+    },
+    [isAdmin, fetchBillingHistory]
+  )
+
+  /**
    * Change page
    */
   const handlePageChange = useCallback((newPage: number) => {
@@ -152,11 +231,17 @@ export function useBillingHistory(options: UseBillingHistoryOptions = {}) {
     keyword,
     loading,
     completing,
+    deleting,
+    previewing,
+    previewItems,
+    previewTotal,
     isAdmin,
     handlePageChange,
     handlePageSizeChange,
     handleSearch,
     handleCompleteOrder,
+    handlePreviewPendingOrders,
+    handleDeletePendingOrders,
     refresh: fetchBillingHistory,
   }
 }

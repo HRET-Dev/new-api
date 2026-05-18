@@ -27,17 +27,18 @@ import {
   Button,
   Input,
   Tag,
+  Spin,
 } from '@douyinfe/semi-ui';
 import {
   IllustrationNoResult,
   IllustrationNoResultDark,
 } from '@douyinfe/semi-illustrations';
-import { Coins } from 'lucide-react';
-import { IconSearch } from '@douyinfe/semi-icons';
+import { Coins, Trash2 } from 'lucide-react';
+import { IconSearch, IconAlertTriangle } from '@douyinfe/semi-icons';
 import { API, timestamp2string } from '../../../helpers';
 import { isAdmin } from '../../../helpers/utils';
 import { useIsMobile } from '../../../hooks/common/useIsMobile';
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
 // 状态映射配置
 const STATUS_CONFIG = {
@@ -64,6 +65,13 @@ const TopupHistoryModal = ({ visible, onCancel, t }) => {
   const [pageSize, setPageSize] = useState(10);
   const [keyword, setKeyword] = useState('');
   const isMobile = useIsMobile();
+
+  // 清理未付订单相关状态
+  const [previewing, setPreviewing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewItems, setPreviewItems] = useState([]);
+  const [previewTotal, setPreviewTotal] = useState(0);
 
   const loadTopups = async (currentPage, currentPageSize) => {
     setLoading(true);
@@ -132,6 +140,47 @@ const TopupHistoryModal = ({ visible, onCancel, t }) => {
       content: t('是否将该订单标记为成功并为用户入账？'),
       onOk: () => handleAdminComplete(tradeNo),
     });
+  };
+
+  // 管理员预览并清理超时未付订单
+  const handlePreviewPending = async () => {
+    setPreviewing(true);
+    try {
+      const res = await API.get('/api/user/topup/pending-preview?expire_hours=24');
+      const { success, message, data } = res.data;
+      if (success) {
+        setPreviewItems(data.items || []);
+        setPreviewTotal(data.total || 0);
+        setPreviewVisible(true);
+      } else {
+        Toast.error({ content: message || t('加载预览失败') });
+      }
+    } catch (e) {
+      Toast.error({ content: t('加载预览失败') });
+    } finally {
+      setPreviewing(false);
+    }
+  };
+
+  const handleDeletePending = async () => {
+    setDeleting(true);
+    try {
+      const res = await API.post('/api/user/topup/delete-pending', { expire_hours: 24 });
+      const { success, message, data } = res.data;
+      if (success) {
+        Toast.success({
+          content: t('删除 {{count}} 笔未付订单', { count: data?.deleted ?? 0 }),
+        });
+        setPreviewVisible(false);
+        await loadTopups(page, pageSize);
+      } else {
+        Toast.error({ content: message || t('补单失败') });
+      }
+    } catch (e) {
+      Toast.error({ content: t('补单失败') });
+    } finally {
+      setDeleting(false);
+    }
   };
 
   // 渲染状态徽章
@@ -253,49 +302,156 @@ const TopupHistoryModal = ({ visible, onCancel, t }) => {
   }, [t, userIsAdmin]);
 
   return (
-    <Modal
-      title={t('充值账单')}
-      visible={visible}
-      onCancel={onCancel}
-      footer={null}
-      size={isMobile ? 'full-width' : 'large'}
-    >
-      <div className='mb-3'>
-        <Input
-          prefix={<IconSearch />}
-          placeholder={t('订单号')}
-          value={keyword}
-          onChange={handleKeywordChange}
-          showClear
+    <>
+      <Modal
+        title={t('充值账单')}
+        visible={visible}
+        onCancel={onCancel}
+        footer={null}
+        size={isMobile ? 'full-width' : 'large'}
+      >
+        <div className='mb-3 flex items-center gap-2'>
+          <div className='flex-1'>
+            <Input
+              prefix={<IconSearch />}
+              placeholder={t('订单号')}
+              value={keyword}
+              onChange={handleKeywordChange}
+              showClear
+            />
+          </div>
+          {/* 管理员：清理超时未付订单 */}
+          {userIsAdmin && (
+            <Button
+              type='danger'
+              theme='light'
+              size='default'
+              icon={<Trash2 size={14} />}
+              loading={previewing}
+              disabled={deleting || loading}
+              onClick={handlePreviewPending}
+              title={t('超过 24 小时未支付的订单将被永久删除')}
+            >
+              {previewing ? t('清理未付订单中...') : t('清理未付订单')}
+            </Button>
+          )}
+        </div>
+        <Table
+          columns={columns}
+          dataSource={topups}
+          loading={loading}
+          rowKey='id'
+          pagination={{
+            currentPage: page,
+            pageSize: pageSize,
+            total: total,
+            showSizeChanger: true,
+            pageSizeOpts: [10, 20, 50, 100],
+            onPageChange: handlePageChange,
+            onPageSizeChange: handlePageSizeChange,
+          }}
+          size='small'
+          empty={
+            <Empty
+              image={<IllustrationNoResult style={{ width: 150, height: 150 }} />}
+              darkModeImage={
+                <IllustrationNoResultDark style={{ width: 150, height: 150 }} />
+              }
+              description={t('暂无充值记录')}
+              style={{ padding: 30 }}
+            />
+          }
         />
-      </div>
-      <Table
-        columns={columns}
-        dataSource={topups}
-        loading={loading}
-        rowKey='id'
-        pagination={{
-          currentPage: page,
-          pageSize: pageSize,
-          total: total,
-          showSizeChanger: true,
-          pageSizeOpts: [10, 20, 50, 100],
-          onPageChange: handlePageChange,
-          onPageSizeChange: handlePageSizeChange,
-        }}
-        size='small'
-        empty={
-          <Empty
-            image={<IllustrationNoResult style={{ width: 150, height: 150 }} />}
-            darkModeImage={
-              <IllustrationNoResultDark style={{ width: 150, height: 150 }} />
-            }
-            description={t('暂无充值记录')}
-            style={{ padding: 30 }}
-          />
+      </Modal>
+
+      {/* 预览并确认删除弹窗 */}
+      <Modal
+        title={
+          <span className='flex items-center gap-2'>
+            <IconAlertTriangle style={{ color: 'var(--semi-color-danger)' }} />
+            {t('清理未付订单')}
+          </span>
         }
-      />
-    </Modal>
+        visible={previewVisible}
+        onCancel={() => !deleting && setPreviewVisible(false)}
+        footer={
+          <div className='flex justify-end gap-2'>
+            <Button
+              disabled={deleting}
+              onClick={() => setPreviewVisible(false)}
+            >
+              {t('取消')}
+            </Button>
+            <Button
+              type='danger'
+              theme='solid'
+              loading={deleting}
+              disabled={previewTotal === 0}
+              onClick={handleDeletePending}
+            >
+              {deleting
+                ? t('清理未付订单中...')
+                : t('删除 {{count}} 笔未付订单', { count: previewTotal })}
+            </Button>
+          </div>
+        }
+        size={isMobile ? 'full-width' : 'medium'}
+      >
+        <p className='mb-3 text-sm' style={{ color: 'var(--semi-color-text-1)' }}>
+          {previewTotal > previewItems.length
+            ? t('以下为将被删除的订单预览（最多显示 100 条）')
+            : t('共 {{total}} 笔，确认删除？', { total: previewTotal })}
+        </p>
+        {previewItems.length === 0 ? (
+          <Empty
+            image={<IllustrationNoResult style={{ width: 120, height: 120 }} />}
+            darkModeImage={
+              <IllustrationNoResultDark style={{ width: 120, height: 120 }} />
+            }
+            description={t('暂无超时未支付订单')}
+            style={{ padding: 20 }}
+          />
+        ) : (
+          <Table
+            size='small'
+            dataSource={previewItems}
+            rowKey='id'
+            pagination={false}
+            scroll={{ y: 320 }}
+            columns={[
+              {
+                title: t('订单号'),
+                dataIndex: 'trade_no',
+                key: 'trade_no',
+                render: (text) => <Text copyable ellipsis style={{ maxWidth: 160 }}>{text}</Text>,
+              },
+              ...(userIsAdmin
+                ? [{
+                    title: t('用户ID'),
+                    dataIndex: 'user_id',
+                    key: 'user_id',
+                    width: 80,
+                    render: (v) => <Text>{v ?? '-'}</Text>,
+                  }]
+                : []),
+              {
+                title: t('金额'),
+                dataIndex: 'amount',
+                key: 'amount',
+                width: 80,
+                render: (v) => <Text>${Number(v ?? 0).toFixed(2)}</Text>,
+              },
+              {
+                title: t('创建时间'),
+                dataIndex: 'create_time',
+                key: 'create_time',
+                render: (time) => timestamp2string(time),
+              },
+            ]}
+          />
+        )}
+      </Modal>
+    </>
   );
 };
 

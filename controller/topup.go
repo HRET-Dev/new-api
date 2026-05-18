@@ -508,3 +508,67 @@ func AdminCompleteTopUp(c *gin.Context) {
 	}
 	common.ApiSuccess(c, nil)
 }
+
+// defaultDeletePendingHours 默认清理时长（小时）：超过该时长仍为 pending 的订单将被删除
+const defaultDeletePendingHours = 24
+
+type AdminDeletePendingTopUpsRequest struct {
+	// ExpireHours 超过该小时数仍为 pending 的订单将被删除，默认 24
+	ExpireHours int `json:"expire_hours"`
+}
+
+type AdminDeletePendingTopUpsResponse struct {
+	Deleted int64 `json:"deleted"`
+}
+
+type AdminPreviewPendingTopUpsResponse struct {
+	Items   []*model.TopUp `json:"items"`
+	Total   int64          `json:"total"`
+	Preview int            `json:"preview"` // 实际返回条数（最多 previewPendingLimit）
+}
+
+// AdminPreviewPendingTopUps 预览将被删除的 pending 订单，不执行任何删除
+func AdminPreviewPendingTopUps(c *gin.Context) {
+	expireHoursStr := c.DefaultQuery("expire_hours", "24")
+	expireHours, err := strconv.Atoi(expireHoursStr)
+	if err != nil || expireHours <= 0 {
+		expireHours = defaultDeletePendingHours
+	}
+
+	cutoff := time.Now().Add(-time.Duration(expireHours) * time.Hour).Unix()
+	items, total, err := model.PreviewPendingTopUps(cutoff)
+	if err != nil {
+		logger.LogError(c.Request.Context(), fmt.Sprintf("预览 pending 订单失败 expire_hours=%d error=%q", expireHours, err.Error()))
+		common.ApiErrorMsg(c, "操作失败，请稍后重试")
+		return
+	}
+
+	common.ApiSuccess(c, AdminPreviewPendingTopUpsResponse{
+		Items:   items,
+		Total:   total,
+		Preview: len(items),
+	})
+}
+
+// AdminDeletePendingTopUps 管理员一键删除长时间未支付的 pending 订单（物理删除）
+func AdminDeletePendingTopUps(c *gin.Context) {
+	var req AdminDeletePendingTopUpsRequest
+	// body 可为空，使用默认值；也可传 expire_hours 自定义时长
+	_ = c.ShouldBindJSON(&req)
+
+	expireHours := req.ExpireHours
+	if expireHours <= 0 {
+		expireHours = defaultDeletePendingHours
+	}
+
+	cutoff := time.Now().Add(-time.Duration(expireHours) * time.Hour).Unix()
+	deleted, err := model.DeletePendingTopUps(cutoff)
+	if err != nil {
+		logger.LogError(c.Request.Context(), fmt.Sprintf("批量删除 pending 订单失败 expire_hours=%d error=%q", expireHours, err.Error()))
+		common.ApiErrorMsg(c, "操作失败，请稍后重试")
+		return
+	}
+
+	logger.LogInfo(c.Request.Context(), fmt.Sprintf("管理员批量删除 pending 订单 expire_hours=%d deleted=%d client_ip=%s", expireHours, deleted, c.ClientIP()))
+	common.ApiSuccess(c, AdminDeletePendingTopUpsResponse{Deleted: deleted})
+}
