@@ -72,6 +72,7 @@ const PAYMENT_TYPES = [
   { value: 'alipay', label: 'Alipay' },
   { value: 'wxpay', label: 'WeChat Pay' },
   { value: 'stripe', label: 'Stripe' },
+  { value: 'usdt.bep20', label: 'USDT-BEP20' },
 ]
 
 const getColorPreview = (color: string) => {
@@ -85,6 +86,7 @@ const COLOR_PRESETS = [
   { value: '#1677FF', label: 'Blue (Alipay)' },
   { value: '#07C160', label: 'Green (WeChat)' },
   { value: '#635BFF', label: 'Purple (Stripe)' },
+  { value: '#26A17B', label: 'Green (BEPUsdt)' },
   { value: '#1890FF', label: 'Sky Blue' },
   { value: '#52C41A', label: 'Lime Green' },
   { value: 'black', label: 'Black' },

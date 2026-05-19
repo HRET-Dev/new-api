@@ -96,6 +96,12 @@ function parseWaffoPayMethods(data: unknown): WaffoPayMethod[] {
     .filter((item) => item.name)
 }
 
+function parseStringList(data: unknown): string[] {
+  return parseJsonArray(data).filter(
+    (item): item is string => typeof item === 'string' && item.trim() !== ''
+  )
+}
+
 function parseCreemProducts(data: unknown): CreemProduct[] {
   return parseJsonArray(data)
     .filter(
@@ -190,6 +196,7 @@ export function useTopupInfo() {
         waffo_pay_methods: parseWaffoPayMethods(
           response.data.waffo_pay_methods
         ),
+        bepusdt_trade_types: parseStringList(response.data.bepusdt_trade_types),
       }
 
       setTopupInfo(processedData)

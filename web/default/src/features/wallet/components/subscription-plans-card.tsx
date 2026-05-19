@@ -64,10 +64,21 @@ interface SubscriptionPlansCardProps {
   onAvailabilityChange?: (available: boolean) => void
 }
 
-function getEpayMethods(payMethods: PaymentMethod[] = []): PaymentMethod[] {
-  return payMethods.filter(
-    (m) => m?.type && m.type !== 'stripe' && m.type !== 'creem'
-  )
+function getEpayMethods(
+  payMethods: PaymentMethod[] = [],
+  bepusdtTradeTypes: string[] = []
+): PaymentMethod[] {
+  const hasBEPUsdtTradeTypes = bepusdtTradeTypes.length > 0
+
+  return payMethods.filter((m) => {
+    if (!m?.type || m.type === 'stripe' || m.type === 'creem') {
+      return false
+    }
+    if (hasBEPUsdtTradeTypes) {
+      return !bepusdtTradeTypes.includes(m.type)
+    }
+    return !m.type.startsWith('usdt.')
+  })
 }
 
 function getBillingPreferenceLabel(
@@ -113,8 +124,9 @@ export function SubscriptionPlansCard({
   const enableCreem = !!topupInfo?.enable_creem_topup
   const enableOnlineTopUp = !!topupInfo?.enable_online_topup
   const epayMethods = useMemo(
-    () => getEpayMethods(topupInfo?.pay_methods),
-    [topupInfo?.pay_methods]
+    () =>
+      getEpayMethods(topupInfo?.pay_methods, topupInfo?.bepusdt_trade_types),
+    [topupInfo?.pay_methods, topupInfo?.bepusdt_trade_types]
   )
 
   const fetchPlans = useCallback(async () => {

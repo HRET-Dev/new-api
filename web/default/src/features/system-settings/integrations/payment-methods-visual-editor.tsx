@@ -72,6 +72,14 @@ const PAYMENT_TEMPLATES = [
     },
   },
   {
+    name: 'USDT-BEP20',
+    template: {
+      color: '#26A17B',
+      name: 'USDT-BEP20',
+      type: 'usdt.bep20',
+    },
+  },
+  {
     name: 'Custom',
     template: {
       color: 'black',
@@ -81,6 +89,10 @@ const PAYMENT_TEMPLATES = [
     },
   },
 ]
+
+function getPaymentMethodIdentity(method: Pick<PaymentMethodData, 'name' | 'type'>) {
+  return `${method.type}:${method.name}`
+}
 
 export function PaymentMethodsVisualEditor({
   value,
@@ -138,8 +150,8 @@ export function PaymentMethodsVisualEditor({
           item !== null &&
           'name' in item &&
           'type' in item &&
-          item.name === editData.name &&
-          item.type === editData.type
+          getPaymentMethodIdentity(item as PaymentMethodData) ===
+            getPaymentMethodIdentity(editData)
       )
       if (index !== -1) {
         updatedArray[index] = data
@@ -167,8 +179,8 @@ export function PaymentMethodsVisualEditor({
           item !== null &&
           'name' in item &&
           'type' in item &&
-          item.name === method.name &&
-          item.type === method.type
+          getPaymentMethodIdentity(item as PaymentMethodData) ===
+            getPaymentMethodIdentity(method)
         )
     )
 
@@ -193,15 +205,20 @@ export function PaymentMethodsVisualEditor({
     })
 
     // Check if template already exists
-    const exists = parsed.some(
-      (item) =>
-        typeof item === 'object' &&
-        item !== null &&
-        'type' in item &&
-        'name' in item &&
+    const exists = parsed.some((item) => {
+      if (
+        typeof item !== 'object' ||
+        item === null ||
+        !('type' in item) ||
+        !('name' in item)
+      ) {
+        return false
+      }
+      return (
         item.type === template.type &&
         item.name === template.name
-    )
+      )
+    })
 
     if (!exists) {
       parsed.push(template)
@@ -306,10 +323,8 @@ export function PaymentMethodsVisualEditor({
                 {filteredMethods.map((method, index) => {
                   const colorPreview = getColorPreview(method.color)
                   return (
-                    <TableRow key={`${method.type}-${index}`}>
-                      <TableCell className='font-medium'>
-                        {method.name}
-                      </TableCell>
+                    <TableRow key={`${getPaymentMethodIdentity(method)}-${index}`}>
+                      <TableCell className='font-medium'>{method.name}</TableCell>
                       <TableCell>
                         <code className='bg-muted rounded px-1.5 py-0.5 text-xs'>
                           {method.type}
@@ -379,7 +394,10 @@ export function PaymentMethodsVisualEditor({
             {filteredMethods.map((method, index) => {
               const colorPreview = getColorPreview(method.color)
               return (
-                <div key={`${method.type}-${index}`} className='p-4'>
+                <div
+                  key={`${getPaymentMethodIdentity(method)}-${index}`}
+                  className='p-4'
+                >
                   <div className='mb-3 flex items-start justify-between'>
                     <div className='flex-1'>
                       <div className='mb-1 font-medium'>{method.name}</div>

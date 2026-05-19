@@ -37,6 +37,7 @@ const (
 	PaymentProviderCreem        = "creem"
 	PaymentProviderWaffo        = "waffo"
 	PaymentProviderWaffoPancake = "waffo_pancake"
+	PaymentProviderBEPUsdt      = "bepusdt"
 )
 
 var (
@@ -610,4 +611,3 @@ func PreviewPendingTopUps(beforeTimestamp int64) (topups []*TopUp, total int64, 
 	}
 	return topups, total, nil
 }
-

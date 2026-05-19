@@ -285,7 +285,10 @@ export function RechargeFormCard({
                     value={localAmount}
                     onChange={(e) => handleAmountChange(e.target.value)}
                     min={minTopup}
-                    placeholder={`Minimum ${minTopup}`}
+                    placeholder={t('Minimum {{amount}} {{currency}}', {
+                      amount: minTopup,
+                      currency: '',
+                    }).trim()}
                     className='h-9 text-base sm:h-10 sm:text-lg'
                   />
                   <div className='bg-muted/30 flex min-h-9 items-center justify-between gap-2 rounded-md border px-3 lg:min-w-52'>
@@ -309,19 +312,21 @@ export function RechargeFormCard({
                 </Label>
                 {hasStandardPaymentMethods ? (
                   <div className='grid grid-cols-2 gap-1.5 sm:gap-3 lg:grid-cols-3'>
-                    {topupInfo?.pay_methods?.map((method) => {
+                    {topupInfo?.pay_methods?.map((method, index) => {
                       const minTopup = method.min_topup || 0
                       const disabled = minTopup > topupAmount
+                      const methodKey = `${method.type}:${method.name}:${index}`
+                      const loadingKey = method.type
 
                       const button = (
                         <Button
-                          key={method.type}
+                          key={methodKey}
                           variant='outline'
                           onClick={() => onPaymentMethodSelect(method)}
                           disabled={disabled || !!paymentLoading}
                           className='h-9 min-w-0 justify-start gap-2 rounded-lg px-3'
                         >
-                          {paymentLoading === method.type ? (
+                          {paymentLoading === loadingKey ? (
                             <Loader2 className='h-4 w-4 animate-spin' />
                           ) : (
                             getPaymentIcon(
@@ -336,7 +341,7 @@ export function RechargeFormCard({
                       )
 
                       return disabled ? (
-                        <TooltipProvider key={method.type}>
+                        <TooltipProvider key={methodKey}>
                           <Tooltip>
                             <TooltipTrigger render={button}></TooltipTrigger>
                             <TooltipContent>

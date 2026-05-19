@@ -268,6 +268,12 @@ export type BillingSettings = {
   WaffoPancakeCurrency: string
   WaffoPancakeUnitPrice: number
   WaffoPancakeMinTopUp: number
+  BEPUsdtEnabled: boolean
+  BEPUsdtApiUrl: string
+  BEPUsdtToken: string
+  BEPUsdtFiatCurrency: string
+  BEPUsdtTradeType: string
+  BEPUsdtTradeTypes: string
   'checkin_setting.enabled': boolean
   'checkin_setting.min_quota': number
   'checkin_setting.max_quota': number

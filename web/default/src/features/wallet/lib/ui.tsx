@@ -84,6 +84,15 @@ export function getPaymentIcon(
     return <CreditCard className={className} />
   }
 
+  if (paymentType.startsWith('usdt.')) {
+    return (
+      <CreditCard
+        className={className}
+        style={{ color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.BEPUSDT] }}
+      />
+    )
+  }
+
   switch (paymentType) {
     case PAYMENT_TYPES.ALIPAY:
       return (
@@ -125,6 +134,13 @@ export function getPaymentIcon(
         <CreditCard
           className={className}
           style={{ color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.WAFFO_PANCAKE] }}
+        />
+      )
+    case PAYMENT_TYPES.BEPUSDT:
+      return (
+        <CreditCard
+          className={className}
+          style={{ color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.BEPUSDT] }}
         />
       )
     default:
