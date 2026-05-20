@@ -60,9 +60,9 @@ import {
   removeTrailingSlash,
 } from './utils'
 import {
-  BEPUsdtSettingsSection,
-  type BEPUsdtSettingsValues,
-} from './bepusdt-settings-section'
+  EpusdtSettingsSection,
+  type EpusdtSettingsValues,
+} from './epusdt-settings-section'
 import {
   WaffoPancakeSettingsSection,
   type WaffoPancakeSettingsValues,
@@ -153,7 +153,7 @@ type PaymentSettingsSectionProps = {
   defaultValues: PaymentFormValues
   waffoDefaultValues: WaffoSettingsValues
   waffoPancakeDefaultValues: WaffoPancakeSettingsValues
-  bepusdtDefaultValues: BEPUsdtSettingsValues
+  epusdtDefaultValues: EpusdtSettingsValues
   complianceDefaults: PaymentComplianceDefaults
 }
 
@@ -161,7 +161,7 @@ export function PaymentSettingsSection({
   defaultValues,
   waffoDefaultValues,
   waffoPancakeDefaultValues,
-  bepusdtDefaultValues,
+  epusdtDefaultValues,
   complianceDefaults,
 }: PaymentSettingsSectionProps) {
   const { t } = useTranslation()
@@ -1482,7 +1482,7 @@ export function PaymentSettingsSection({
 
       <Separator />
 
-      <BEPUsdtSettingsSection defaultValues={bepusdtDefaultValues} />
+      <EpusdtSettingsSection defaultValues={epusdtDefaultValues} />
       {/* eslint-enable react-hooks/refs */}
     </SettingsSection>
   )

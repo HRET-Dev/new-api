@@ -39,13 +39,13 @@ import {
   useCreemPayment,
   useWaffoPayment,
   useWaffoPancakePayment,
-  useBEPUsdtPayment,
+  useEpusdtPayment,
 } from './hooks'
 import {
   getDefaultPaymentType,
   getMinTopupAmount,
   isWaffoPancakePayment,
-  isBEPUsdtPayment,
+  isEpusdtPayment,
 } from './lib'
 import type {
   UserWalletData,
@@ -104,8 +104,8 @@ export function Wallet(props: WalletProps) {
   const { processWaffoPayment } = useWaffoPayment()
   const { processing: pancakeProcessing, processWaffoPancakePayment } =
     useWaffoPancakePayment()
-  const { processing: bepusdtProcessing, processBEPUsdtPayment } =
-    useBEPUsdtPayment()
+  const { processing: epusdtProcessing, processEpusdtPayment } =
+    useEpusdtPayment()
 
   const getPaymentMethodKey = useCallback((method: PaymentMethod) => {
     return method.type
@@ -149,7 +149,7 @@ export function Wallet(props: WalletProps) {
       calculatePaymentAmount(
         minTopup,
         defaultPaymentType,
-        topupInfo.bepusdt_trade_types
+        topupInfo.epusdt_trade_types
       )
     }
   }, [topupInfo, topupAmount, calculatePaymentAmount])
@@ -166,7 +166,7 @@ export function Wallet(props: WalletProps) {
     calculatePaymentAmount(
       preset.value,
       getCurrentPaymentType(),
-      topupInfo?.bepusdt_trade_types
+      topupInfo?.epusdt_trade_types
     )
   }
 
@@ -177,7 +177,7 @@ export function Wallet(props: WalletProps) {
     calculatePaymentAmount(
       amount,
       getCurrentPaymentType(),
-      topupInfo?.bepusdt_trade_types
+      topupInfo?.epusdt_trade_types
     )
   }
 
@@ -197,7 +197,7 @@ export function Wallet(props: WalletProps) {
       await calculatePaymentAmount(
         topupAmount,
         method.type,
-        topupInfo?.bepusdt_trade_types
+        topupInfo?.epusdt_trade_types
       )
       setConfirmDialogOpen(true)
     } finally {
@@ -210,14 +210,14 @@ export function Wallet(props: WalletProps) {
     if (!selectedPaymentMethod) return
 
     const isPancake = isWaffoPancakePayment(selectedPaymentMethod.type)
-    const isBEPUsdt = isBEPUsdtPayment(
+    const isEpusdt = isEpusdtPayment(
       selectedPaymentMethod.type,
-      topupInfo?.bepusdt_trade_types
+      topupInfo?.epusdt_trade_types
     )
     const success = isPancake
       ? await processWaffoPancakePayment(topupAmount)
-      : isBEPUsdt
-        ? await processBEPUsdtPayment(topupAmount, selectedPaymentMethod.type)
+      : isEpusdt
+        ? await processEpusdtPayment(topupAmount, selectedPaymentMethod.type)
         : await processPayment(topupAmount, selectedPaymentMethod.type)
 
     if (success) {
@@ -366,7 +366,7 @@ export function Wallet(props: WalletProps) {
         paymentAmount={paymentAmount}
         paymentMethod={selectedPaymentMethod}
         calculating={calculating}
-        processing={processing || pancakeProcessing || bepusdtProcessing}
+        processing={processing || pancakeProcessing || epusdtProcessing}
         discountRate={getDiscountRate()}
         usdExchangeRate={effectiveUsdExchangeRate}
       />

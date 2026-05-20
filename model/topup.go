@@ -37,7 +37,7 @@ const (
 	PaymentProviderCreem        = "creem"
 	PaymentProviderWaffo        = "waffo"
 	PaymentProviderWaffoPancake = "waffo_pancake"
-	PaymentProviderBEPUsdt      = "bepusdt"
+	PaymentProviderEpusdt       = "epusdt"
 )
 
 var (

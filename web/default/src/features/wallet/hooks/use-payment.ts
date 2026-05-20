@@ -21,7 +21,7 @@ import i18next from 'i18next'
 import { toast } from 'sonner'
 import {
   calculateAmount,
-  calculateBEPUsdtAmount,
+  calculateEpusdtAmount,
   calculateStripeAmount,
   calculateWaffoPancakeAmount,
   requestPayment,
@@ -29,7 +29,7 @@ import {
   isApiSuccess,
 } from '../api'
 import {
-  isBEPUsdtPayment,
+  isEpusdtPayment,
   isStripePayment,
   isWaffoPancakePayment,
   submitPaymentForm,
@@ -49,20 +49,20 @@ export function usePayment() {
     async (
       topupAmount: number,
       paymentType: string,
-      bepusdtTradeTypes?: string[]
+      epusdtTradeTypes?: string[]
     ) => {
       try {
         setCalculating(true)
 
         const isStripe = isStripePayment(paymentType)
         const isPancake = isWaffoPancakePayment(paymentType)
-        const isBEPUsdt = isBEPUsdtPayment(paymentType, bepusdtTradeTypes)
+        const isEpusdt = isEpusdtPayment(paymentType, epusdtTradeTypes)
         const response = isStripe
           ? await calculateStripeAmount({ amount: topupAmount })
           : isPancake
             ? await calculateWaffoPancakeAmount({ amount: topupAmount })
-            : isBEPUsdt
-              ? await calculateBEPUsdtAmount({ amount: topupAmount })
+            : isEpusdt
+              ? await calculateEpusdtAmount({ amount: topupAmount })
               : await calculateAmount({ amount: topupAmount })
 
         if (isApiSuccess(response) && response.data) {

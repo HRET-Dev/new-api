@@ -70,6 +70,7 @@ function parsePaymentMethods(
         name: typeof item.name === 'string' ? item.name : '',
         type,
         color: typeof item.color === 'string' ? item.color : undefined,
+        icon: typeof item.icon === 'string' ? item.icon : undefined,
         min_topup:
           type === 'stripe' && normalizedMinTopup <= 0
             ? stripeMinTopup
@@ -196,7 +197,7 @@ export function useTopupInfo() {
         waffo_pay_methods: parseWaffoPayMethods(
           response.data.waffo_pay_methods
         ),
-        bepusdt_trade_types: parseStringList(response.data.bepusdt_trade_types),
+        epusdt_trade_types: parseStringList(response.data.epusdt_trade_types),
       }
 
       setTopupInfo(processedData)

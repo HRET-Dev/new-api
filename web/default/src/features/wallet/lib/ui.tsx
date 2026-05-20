@@ -53,6 +53,29 @@ function normalizeHttpIconUrl(raw: string | undefined | null): string | null {
   return url.toString()
 }
 
+const LEGACY_SEMI_COLOR_MAP: Record<string, string> = {
+  blue: '#1677FF',
+  green: '#07C160',
+  orange: '#F97316',
+  purple: '#635BFF',
+  red: '#EF4444',
+  yellow: '#F59E0B',
+  grey: '#6B7280',
+  gray: '#6B7280',
+}
+
+function normalizePaymentIconColor(raw: string | undefined): string | undefined {
+  const color = raw?.trim()
+  if (!color) return undefined
+
+  const semiMatch = color.match(/--semi-([a-z]+)-\d+/i)
+  if (semiMatch) {
+    return LEGACY_SEMI_COLOR_MAP[semiMatch[1].toLowerCase()]
+  }
+
+  return color
+}
+
 /**
  * Get payment method icon component
  *
@@ -63,7 +86,8 @@ export function getPaymentIcon(
   paymentType: string | undefined,
   className: string = 'h-4 w-4',
   iconUrl?: string,
-  altName?: string
+  altName?: string,
+  customColor?: string
 ): ReactNode {
   const safeIconUrl = normalizeHttpIconUrl(iconUrl)
   if (safeIconUrl) {
@@ -84,11 +108,14 @@ export function getPaymentIcon(
     return <CreditCard className={className} />
   }
 
+  const normalizedColor = normalizePaymentIconColor(customColor)
+  const iconStyle = normalizedColor ? { color: normalizedColor } : undefined
+
   if (paymentType.startsWith('usdt.')) {
     return (
       <CreditCard
         className={className}
-        style={{ color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.BEPUSDT] }}
+        style={iconStyle || { color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.EPUSDT] }}
       />
     )
   }
@@ -98,52 +125,54 @@ export function getPaymentIcon(
       return (
         <SiAlipay
           className={className}
-          style={{ color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.ALIPAY] }}
+          style={iconStyle || { color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.ALIPAY] }}
         />
       )
     case PAYMENT_TYPES.WECHAT:
       return (
         <SiWechat
           className={className}
-          style={{ color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.WECHAT] }}
+          style={iconStyle || { color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.WECHAT] }}
         />
       )
     case PAYMENT_TYPES.STRIPE:
       return (
         <SiStripe
           className={className}
-          style={{ color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.STRIPE] }}
+          style={iconStyle || { color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.STRIPE] }}
         />
       )
     case PAYMENT_TYPES.CREEM:
       return (
         <Landmark
           className={className}
-          style={{ color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.CREEM] }}
+          style={iconStyle || { color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.CREEM] }}
         />
       )
     case PAYMENT_TYPES.WAFFO:
       return (
         <CreditCard
           className={className}
-          style={{ color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.WAFFO] }}
+          style={iconStyle || { color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.WAFFO] }}
         />
       )
     case PAYMENT_TYPES.WAFFO_PANCAKE:
       return (
         <CreditCard
           className={className}
-          style={{ color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.WAFFO_PANCAKE] }}
+          style={
+            iconStyle || { color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.WAFFO_PANCAKE] }
+          }
         />
       )
-    case PAYMENT_TYPES.BEPUSDT:
+    case PAYMENT_TYPES.EPUSDT:
       return (
         <CreditCard
           className={className}
-          style={{ color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.BEPUSDT] }}
+          style={iconStyle || { color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.EPUSDT] }}
         />
       )
     default:
-      return <CreditCard className={className} />
+      return <CreditCard className={className} style={iconStyle} />
   }
 }

@@ -72,11 +72,11 @@ const PAYMENT_TEMPLATES = [
     },
   },
   {
-    name: 'USDT-BEP20',
+    name: 'TRON USDT',
     template: {
       color: '#26A17B',
-      name: 'USDT-BEP20',
-      type: 'usdt.bep20',
+      name: 'TRON USDT',
+      type: 'tron.usdt',
     },
   },
   {

@@ -118,12 +118,12 @@ func InitOptionMap() {
 	common.OptionMap["WaffoPancakeCurrency"] = setting.WaffoPancakeCurrency
 	common.OptionMap["WaffoPancakeUnitPrice"] = strconv.FormatFloat(setting.WaffoPancakeUnitPrice, 'f', -1, 64)
 	common.OptionMap["WaffoPancakeMinTopUp"] = strconv.Itoa(setting.WaffoPancakeMinTopUp)
-	common.OptionMap["BEPUsdtEnabled"] = strconv.FormatBool(setting.BEPUsdtEnabled)
-	common.OptionMap["BEPUsdtApiUrl"] = setting.BEPUsdtApiUrl
-	common.OptionMap["BEPUsdtToken"] = setting.BEPUsdtToken
-	common.OptionMap["BEPUsdtFiatCurrency"] = setting.BEPUsdtFiatCurrency
-	common.OptionMap["BEPUsdtTradeType"] = setting.BEPUsdtTradeType
-	common.OptionMap["BEPUsdtTradeTypes"] = setting.BEPUsdtTradeTypes
+	common.OptionMap["EpusdtEnabled"] = strconv.FormatBool(setting.EpusdtEnabled)
+	common.OptionMap["EpusdtApiUrl"] = setting.EpusdtApiUrl
+	common.OptionMap["EpusdtPid"] = setting.EpusdtPid
+	common.OptionMap["EpusdtSecretKey"] = setting.EpusdtSecretKey
+	common.OptionMap["EpusdtCurrency"] = setting.EpusdtCurrency
+	common.OptionMap["EpusdtTradeTypes"] = setting.EpusdtTradeTypes
 	common.OptionMap["TopupGroupRatio"] = common.TopupGroupRatio2JSONString()
 	common.OptionMap["Chats"] = setting.Chats2JsonString()
 	common.OptionMap["AutoGroups"] = setting.AutoGroups2JsonString()
@@ -449,18 +449,18 @@ func updateOptionMap(key string, value string) (err error) {
 		setting.WaffoPancakeUnitPrice, _ = strconv.ParseFloat(value, 64)
 	case "WaffoPancakeMinTopUp":
 		setting.WaffoPancakeMinTopUp, _ = strconv.Atoi(value)
-	case "BEPUsdtEnabled":
-		setting.BEPUsdtEnabled = value == "true"
-	case "BEPUsdtApiUrl":
-		setting.BEPUsdtApiUrl = value
-	case "BEPUsdtToken":
-		setting.BEPUsdtToken = value
-	case "BEPUsdtFiatCurrency":
-		setting.BEPUsdtFiatCurrency = value
-	case "BEPUsdtTradeType":
-		setting.BEPUsdtTradeType = value
-	case "BEPUsdtTradeTypes":
-		setting.BEPUsdtTradeTypes = value
+	case "EpusdtEnabled":
+		setting.EpusdtEnabled = value == "true"
+	case "EpusdtApiUrl":
+		setting.EpusdtApiUrl = value
+	case "EpusdtPid":
+		setting.EpusdtPid = value
+	case "EpusdtSecretKey":
+		setting.EpusdtSecretKey = value
+	case "EpusdtCurrency":
+		setting.EpusdtCurrency = value
+	case "EpusdtTradeTypes":
+		setting.EpusdtTradeTypes = value
 	case "TopupGroupRatio":
 		err = common.UpdateTopupGroupRatioByJSONString(value)
 	case "GitHubClientId":

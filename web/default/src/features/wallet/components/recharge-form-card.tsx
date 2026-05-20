@@ -333,7 +333,8 @@ export function RechargeFormCard({
                               method.type,
                               'h-4 w-4',
                               method.icon,
-                              method.name
+                              method.name,
+                              method.color
                             )
                           )}
                           <span className='truncate'>{method.name}</span>

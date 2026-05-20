@@ -191,14 +191,15 @@ const BILLING_SECTIONS = [
           WaffoPancakeUnitPrice: settings.WaffoPancakeUnitPrice ?? 1,
           WaffoPancakeMinTopUp: settings.WaffoPancakeMinTopUp ?? 1,
         }}
-        bepusdtDefaultValues={{
-          BEPUsdtEnabled: settings.BEPUsdtEnabled ?? false,
-          BEPUsdtApiUrl: settings.BEPUsdtApiUrl ?? '',
-          BEPUsdtToken: settings.BEPUsdtToken ?? '',
-          BEPUsdtFiatCurrency: settings.BEPUsdtFiatCurrency ?? 'CNY',
-          BEPUsdtTradeType: settings.BEPUsdtTradeType ?? 'usdt.bep20',
-          BEPUsdtTradeTypes:
-            settings.BEPUsdtTradeTypes ?? 'usdt.bep20\nusdt.aptos\nusdt.arbitrum',
+        epusdtDefaultValues={{
+          EpusdtEnabled: settings.EpusdtEnabled ?? false,
+          EpusdtApiUrl: settings.EpusdtApiUrl ?? '',
+          EpusdtPid: settings.EpusdtPid ?? '',
+          EpusdtSecretKey: settings.EpusdtSecretKey ?? '',
+          EpusdtCurrency:
+            (settings.EpusdtCurrency ?? 'cny').toLowerCase(),
+          EpusdtTradeTypes:
+            settings.EpusdtTradeTypes ?? 'tron.usdt\nbsc.usdt\nethereum.usdt',
         }}
         complianceDefaults={{
           confirmed: settings['payment_setting.compliance_confirmed'] ?? false,

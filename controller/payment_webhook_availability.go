@@ -101,20 +101,21 @@ func isWaffoPancakeWebhookEnabled() bool {
 	return isWaffoPancakeTopUpEnabled()
 }
 
-func isBEPUsdtTopUpEnabled() bool {
+func isEpusdtTopUpEnabled() bool {
 	if !isPaymentComplianceConfirmed() {
 		return false
 	}
-	return isBEPUsdtWebhookConfigured() && setting.BEPUsdtEnabled
+	return isEpusdtWebhookConfigured() && setting.EpusdtEnabled
 }
 
-func isBEPUsdtWebhookConfigured() bool {
-	return strings.TrimSpace(setting.BEPUsdtApiUrl) != "" &&
-		strings.TrimSpace(setting.BEPUsdtToken) != ""
+func isEpusdtWebhookConfigured() bool {
+	return strings.TrimSpace(setting.EpusdtApiUrl) != "" &&
+		strings.TrimSpace(setting.EpusdtPid) != "" &&
+		setting.GetEpusdtSecretKey() != ""
 }
 
-func isBEPUsdtWebhookEnabled() bool {
-	return isBEPUsdtTopUpEnabled()
+func isEpusdtWebhookEnabled() bool {
+	return isEpusdtTopUpEnabled()
 }
 
 func isEpayTopUpEnabled() bool {

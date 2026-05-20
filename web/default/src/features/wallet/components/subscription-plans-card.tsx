@@ -66,16 +66,16 @@ interface SubscriptionPlansCardProps {
 
 function getEpayMethods(
   payMethods: PaymentMethod[] = [],
-  bepusdtTradeTypes: string[] = []
+  epusdtTradeTypes: string[] = []
 ): PaymentMethod[] {
-  const hasBEPUsdtTradeTypes = bepusdtTradeTypes.length > 0
+  const hasEpusdtTradeTypes = epusdtTradeTypes.length > 0
 
   return payMethods.filter((m) => {
     if (!m?.type || m.type === 'stripe' || m.type === 'creem') {
       return false
     }
-    if (hasBEPUsdtTradeTypes) {
-      return !bepusdtTradeTypes.includes(m.type)
+    if (hasEpusdtTradeTypes) {
+      return !epusdtTradeTypes.includes(m.type)
     }
     return !m.type.startsWith('usdt.')
   })
@@ -125,8 +125,8 @@ export function SubscriptionPlansCard({
   const enableOnlineTopUp = !!topupInfo?.enable_online_topup
   const epayMethods = useMemo(
     () =>
-      getEpayMethods(topupInfo?.pay_methods, topupInfo?.bepusdt_trade_types),
-    [topupInfo?.pay_methods, topupInfo?.bepusdt_trade_types]
+      getEpayMethods(topupInfo?.pay_methods, topupInfo?.epusdt_trade_types),
+    [topupInfo?.pay_methods, topupInfo?.epusdt_trade_types]
   )
 
   const fetchPlans = useCallback(async () => {

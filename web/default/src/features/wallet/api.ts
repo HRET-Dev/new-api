@@ -38,8 +38,9 @@ import type {
   WaffoPaymentResponse,
   WaffoPancakePaymentRequest,
   WaffoPancakePaymentResponse,
-  BEPUsdtPaymentRequest,
-  BEPUsdtPaymentResponse,
+  EpusdtPaymentRequest,
+  EpusdtPaymentResponse,
+  TopupRecord,
 } from './types'
 
 // ============================================================================
@@ -171,24 +172,24 @@ export async function requestWaffoPancakePayment(
 }
 
 /**
- * Calculate payment amount for BEPUsdt payment
+ * Calculate payment amount for Epusdt payment
  */
-export async function calculateBEPUsdtAmount(
+export async function calculateEpusdtAmount(
   request: AmountRequest
 ): Promise<AmountResponse> {
-  const res = await api.post('/api/user/bepusdt/amount', request, {
+  const res = await api.post('/api/user/epusdt/amount', request, {
     skipBusinessError: true,
   } as Record<string, unknown>)
   return res.data
 }
 
 /**
- * Request BEPUsdt payment
+ * Request Epusdt payment
  */
-export async function requestBEPUsdtPayment(
-  request: BEPUsdtPaymentRequest
-): Promise<BEPUsdtPaymentResponse> {
-  const res = await api.post('/api/user/bepusdt/pay', request, {
+export async function requestEpusdtPayment(
+  request: EpusdtPaymentRequest
+): Promise<EpusdtPaymentResponse> {
+  const res = await api.post('/api/user/epusdt/pay', request, {
     skipBusinessError: true,
   } as Record<string, unknown>)
   return res.data

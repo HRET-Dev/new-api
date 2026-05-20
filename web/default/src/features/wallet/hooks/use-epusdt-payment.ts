@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { useState, useCallback } from 'react'
 import i18next from 'i18next'
 import { toast } from 'sonner'
-import { requestBEPUsdtPayment, isApiSuccess } from '../api'
+import { requestEpusdtPayment, isApiSuccess } from '../api'
 
 function getPaymentUrl(data: unknown): string | null {
   if (!data || typeof data !== 'object') return null
@@ -46,17 +46,17 @@ function getErrorMessage(message: string | undefined, data: unknown): string {
 }
 
 /**
- * Hook for handling BEPUsdt payment processing.
- * The backend returns a `payment_url` (BEPUsdt checkout page) which we open in a new tab.
+ * Hook for handling Epusdt payment processing.
+ * The backend returns a `payment_url` (Epusdt checkout page) which we open in a new tab.
  */
-export function useBEPUsdtPayment() {
+export function useEpusdtPayment() {
   const [processing, setProcessing] = useState(false)
 
-  const processBEPUsdtPayment = useCallback(
+  const processEpusdtPayment = useCallback(
     async (topupAmount: number, paymentMethod: string) => {
       setProcessing(true)
       try {
-        const response = await requestBEPUsdtPayment({
+        const response = await requestEpusdtPayment({
           amount: Math.floor(topupAmount),
           payment_method: paymentMethod,
         })
@@ -86,5 +86,5 @@ export function useBEPUsdtPayment() {
     []
   )
 
-  return { processing, processBEPUsdtPayment }
+  return { processing, processEpusdtPayment }
 }

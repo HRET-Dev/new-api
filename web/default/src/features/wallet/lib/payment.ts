@@ -87,18 +87,20 @@ export function isWaffoPancakePayment(paymentType: string): boolean {
 }
 
 /**
- * Check if payment method is BEPUsdt.
- * BEPUsdt returns a payment_url (hosted checkout page) and should be opened
+ * Check if payment method is Epusdt.
+ * Epusdt returns a payment_url (hosted checkout page) and should be opened
  * in a new tab rather than submitted as a form.
  */
-export function isBEPUsdtPayment(
+export function isEpusdtPayment(
   paymentType: string,
   tradeTypes?: string[]
 ): boolean {
   if (tradeTypes && tradeTypes.length > 0) {
     return tradeTypes.includes(paymentType)
   }
-  return paymentType.startsWith('usdt.')
+  return /^(tron|bsc|ethereum|solana)[._:][a-z0-9]+$/i.test(
+    paymentType
+  )
 }
 
 /**
@@ -126,8 +128,8 @@ export function getDefaultPaymentType(topupInfo: TopupInfo | null): string {
     return PAYMENT_TYPES.WAFFO_PANCAKE
   }
 
-  if (topupInfo.enable_bepusdt_topup) {
-    return PAYMENT_TYPES.BEPUSDT
+  if (topupInfo.enable_epusdt_topup) {
+    return PAYMENT_TYPES.EPUSDT
   }
 
   return DEFAULT_PAYMENT_TYPE
@@ -157,7 +159,7 @@ export function getMinTopupAmount(topupInfo: TopupInfo | null): number {
     return topupInfo.waffo_pancake_min_topup || DEFAULT_MIN_TOPUP
   }
 
-  if (topupInfo.enable_bepusdt_topup) {
+  if (topupInfo.enable_epusdt_topup) {
     return topupInfo.min_topup || DEFAULT_MIN_TOPUP
   }
 

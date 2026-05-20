@@ -145,12 +145,12 @@ export interface TopupInfo {
   enable_waffo_pancake_topup?: boolean
   /** Minimum topup amount for Waffo Pancake */
   waffo_pancake_min_topup?: number
-  /** Whether BEPUsdt topup is enabled */
-  enable_bepusdt_topup?: boolean
-  /** Minimum topup amount for BEPUsdt, mirrors the regular online topup minimum */
-  bepusdt_min_topup?: number
-  /** BEPUsdt payment method identifiers that should use BEPUsdt checkout */
-  bepusdt_trade_types?: string[]
+  /** Whether Epusdt topup is enabled */
+  enable_epusdt_topup?: boolean
+  /** Minimum topup amount for Epusdt, mirrors the regular online topup minimum */
+  epusdt_min_topup?: number
+  /** Epusdt payment method identifiers that should use Epusdt checkout */
+  epusdt_trade_types?: string[]
   /** Whether redemption code usage is enabled */
   enable_redemption?: boolean
   /** Whether compliance confirmation has been completed */
@@ -206,19 +206,19 @@ export interface WaffoPancakePaymentRequest {
 }
 
 /**
- * BEPUsdt payment request parameters
+ * Epusdt payment request parameters
  */
-export interface BEPUsdtPaymentRequest {
+export interface EpusdtPaymentRequest {
   /** Topup amount */
   amount: number
-  /** BEPUsdt payment method identifier, such as usdt.bep20 */
+  /** Epusdt payment method identifier, such as tron.usdt or bsc.usdt */
   payment_method: string
 }
 
 /**
- * BEPUsdt payment response
+ * Epusdt payment response
  */
-export type BEPUsdtPaymentResponse = ApiResponse<{ payment_url?: string } | string>
+export type EpusdtPaymentResponse = ApiResponse<{ payment_url?: string } | string>
 
 /**
  * Amount calculation request
