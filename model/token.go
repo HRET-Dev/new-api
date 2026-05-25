@@ -473,6 +473,62 @@ func BatchDeleteTokens(ids []int, userId int) (int, error) {
 	return len(tokens), nil
 }
 
+func CountTokensByGroup(group string) (int64, error) {
+	var total int64
+	err := DB.Model(&Token{}).Where(&Token{Group: group}).Count(&total).Error
+	return total, err
+}
+
+func BatchReplaceTokenGroup(sourceGroup string, targetGroup string) (int64, error) {
+	if sourceGroup == "" {
+		return 0, errors.New("源分组不能为空！")
+	}
+	if targetGroup == "" {
+		return 0, errors.New("目标分组不能为空！")
+	}
+	if sourceGroup == targetGroup {
+		return 0, errors.New("源分组和目标分组不能相同！")
+	}
+
+	tx := DB.Begin()
+
+	var tokens []Token
+	if err := tx.Where(&Token{Group: sourceGroup}).
+		Find(&tokens).Error; err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+	if len(tokens) == 0 {
+		if err := tx.Commit().Error; err != nil {
+			return 0, err
+		}
+		return 0, nil
+	}
+
+	result := tx.Model(&Token{}).
+		Where(&Token{Group: sourceGroup}).
+		Update("group", targetGroup)
+	if result.Error != nil {
+		tx.Rollback()
+		return 0, result.Error
+	}
+	if err := tx.Commit().Error; err != nil {
+		return 0, err
+	}
+
+	if common.RedisEnabled {
+		gopool.Go(func() {
+			for _, token := range tokens {
+				if token.Key != "" {
+					_ = cacheDeleteToken(token.Key)
+				}
+			}
+		})
+	}
+
+	return result.RowsAffected, nil
+}
+
 func GetTokenKeysByIds(ids []int, userId int) ([]Token, error) {
 	var tokens []Token
 	err := DB.Select("id", commonKeyCol).

@@ -39,6 +39,19 @@ export type UpdateOptionResponse = {
   message: string
 }
 
+export type TokenGroupCountResponse = {
+  success: boolean
+  message: string
+  data?: {
+    count: number
+  }
+}
+
+export type ReplaceTokenGroupRequest = {
+  source_group: string
+  target_group: string
+}
+
 export type ConfirmPaymentComplianceResponse = {
   success: boolean
   message: string

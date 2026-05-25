@@ -316,6 +316,11 @@ type TokenBatch struct {
 	Ids []int `json:"ids"`
 }
 
+type TokenGroupReplaceRequest struct {
+	SourceGroup string `json:"source_group"`
+	TargetGroup string `json:"target_group"`
+}
+
 func DeleteTokenBatch(c *gin.Context) {
 	tokenBatch := TokenBatch{}
 	if err := c.ShouldBindJSON(&tokenBatch); err != nil || len(tokenBatch.Ids) == 0 {
@@ -356,4 +361,39 @@ func GetTokenKeysBatch(c *gin.Context) {
 		keysMap[t.Id] = t.GetFullKey()
 	}
 	common.ApiSuccess(c, gin.H{"keys": keysMap})
+}
+
+func CountTokensByGroup(c *gin.Context) {
+	group := strings.TrimSpace(c.Query("group"))
+	if group == "" {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+	count, err := model.CountTokensByGroup(group)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, gin.H{"count": count})
+}
+
+func ReplaceTokenGroup(c *gin.Context) {
+	req := TokenGroupReplaceRequest{}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+	req.SourceGroup = strings.TrimSpace(req.SourceGroup)
+	req.TargetGroup = strings.TrimSpace(req.TargetGroup)
+	if req.SourceGroup == "" || req.TargetGroup == "" || req.SourceGroup == req.TargetGroup {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+
+	count, err := model.BatchReplaceTokenGroup(req.SourceGroup, req.TargetGroup)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, gin.H{"count": count})
 }

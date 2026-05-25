@@ -263,6 +263,12 @@ func SetApiRouter(router *gin.Engine) {
 			channelRoute.POST("/upstream_updates/detect", controller.DetectChannelUpstreamModelUpdates)
 			channelRoute.POST("/upstream_updates/detect_all", controller.DetectAllChannelUpstreamModelUpdates)
 		}
+		adminTokenRoute := apiRouter.Group("/token")
+		adminTokenRoute.Use(middleware.AdminAuth())
+		{
+			adminTokenRoute.GET("/group/count", controller.CountTokensByGroup)
+			adminTokenRoute.POST("/batch/replace_group", controller.ReplaceTokenGroup)
+		}
 		tokenRoute := apiRouter.Group("/token")
 		tokenRoute.Use(middleware.UserAuth())
 		{

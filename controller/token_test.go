@@ -42,27 +42,31 @@ type tokenKeyResponse struct {
 	Key string `json:"key"`
 }
 
+type tokenGroupCountResponse struct {
+	Count int64 `json:"count"`
+}
+
 type sqliteColumnInfo struct {
 	Name string `gorm:"column:name"`
 	Type string `gorm:"column:type"`
 }
 
 type legacyToken struct {
-	Id                 int            `gorm:"primaryKey"`
-	UserId             int            `gorm:"index"`
-	Key                string         `gorm:"column:key;type:char(48);uniqueIndex"`
-	Status             int            `gorm:"default:1"`
-	Name               string         `gorm:"index"`
-	CreatedTime        int64          `gorm:"bigint"`
-	AccessedTime       int64          `gorm:"bigint"`
-	ExpiredTime        int64          `gorm:"bigint;default:-1"`
-	RemainQuota        int            `gorm:"default:0"`
+	Id                 int    `gorm:"primaryKey"`
+	UserId             int    `gorm:"index"`
+	Key                string `gorm:"column:key;type:char(48);uniqueIndex"`
+	Status             int    `gorm:"default:1"`
+	Name               string `gorm:"index"`
+	CreatedTime        int64  `gorm:"bigint"`
+	AccessedTime       int64  `gorm:"bigint"`
+	ExpiredTime        int64  `gorm:"bigint;default:-1"`
+	RemainQuota        int    `gorm:"default:0"`
 	UnlimitedQuota     bool
 	ModelLimitsEnabled bool
-	ModelLimits        string         `gorm:"type:text"`
-	AllowIps           *string        `gorm:"default:''"`
-	UsedQuota          int            `gorm:"default:0"`
-	Group              string         `gorm:"column:group;default:''"`
+	ModelLimits        string  `gorm:"type:text"`
+	AllowIps           *string `gorm:"default:''"`
+	UsedQuota          int     `gorm:"default:0"`
+	Group              string  `gorm:"column:group;default:''"`
 	CrossGroupRetry    bool
 	DeletedAt          gorm.DeletedAt `gorm:"index"`
 }
@@ -178,6 +182,16 @@ func seedToken(t *testing.T, db *gorm.DB, userID int, name string, rawKey string
 	}
 	if err := db.Create(token).Error; err != nil {
 		t.Fatalf("failed to create token: %v", err)
+	}
+	return token
+}
+
+func seedTokenWithGroup(t *testing.T, db *gorm.DB, userID int, name string, rawKey string, group string) *model.Token {
+	t.Helper()
+	token := seedToken(t, db, userID, name, rawKey)
+	token.Group = group
+	if err := db.Model(token).Select("group").Updates(token).Error; err != nil {
+		t.Fatalf("failed to update token group: %v", err)
 	}
 	return token
 }
@@ -537,5 +551,71 @@ func TestGetTokenKeyRequiresOwnershipAndReturnsFullKey(t *testing.T) {
 	}
 	if strings.Contains(unauthorizedRecorder.Body.String(), token.Key) {
 		t.Fatalf("unauthorized key response leaked raw token key: %s", unauthorizedRecorder.Body.String())
+	}
+}
+
+func TestCountTokensByGroup(t *testing.T) {
+	db := setupTokenControllerTestDB(t)
+	seedTokenWithGroup(t, db, 1, "old-1", "oldgroupkey000001", "old-group")
+	seedTokenWithGroup(t, db, 2, "old-2", "oldgroupkey000002", "old-group")
+	seedTokenWithGroup(t, db, 1, "new-1", "newgroupkey000001", "new-group")
+
+	ctx, recorder := newAuthenticatedContext(t, http.MethodGet, "/api/token/group/count?group=old-group", nil, 1)
+	CountTokensByGroup(ctx)
+
+	response := decodeAPIResponse(t, recorder)
+	if !response.Success {
+		t.Fatalf("expected count to succeed, got message: %s", response.Message)
+	}
+	var data tokenGroupCountResponse
+	if err := common.Unmarshal(response.Data, &data); err != nil {
+		t.Fatalf("failed to decode count response: %v", err)
+	}
+	if data.Count != 2 {
+		t.Fatalf("expected count 2, got %d", data.Count)
+	}
+}
+
+func TestReplaceTokenGroupUpdatesMatchingTokensAcrossUsers(t *testing.T) {
+	db := setupTokenControllerTestDB(t)
+	oldTokenA := seedTokenWithGroup(t, db, 1, "old-1", "replacegroup0001", "old-group")
+	oldTokenB := seedTokenWithGroup(t, db, 2, "old-2", "replacegroup0002", "old-group")
+	otherToken := seedTokenWithGroup(t, db, 1, "other", "replacegroup0003", "other-group")
+
+	body := TokenGroupReplaceRequest{
+		SourceGroup: "old-group",
+		TargetGroup: "new-group",
+	}
+	ctx, recorder := newAuthenticatedContext(t, http.MethodPost, "/api/token/batch/replace_group", body, 1)
+	ReplaceTokenGroup(ctx)
+
+	response := decodeAPIResponse(t, recorder)
+	if !response.Success {
+		t.Fatalf("expected replace to succeed, got message: %s", response.Message)
+	}
+	var data tokenGroupCountResponse
+	if err := common.Unmarshal(response.Data, &data); err != nil {
+		t.Fatalf("failed to decode replace response: %v", err)
+	}
+	if data.Count != 2 {
+		t.Fatalf("expected replace count 2, got %d", data.Count)
+	}
+
+	var refreshed []model.Token
+	if err := db.Order("id asc").Find(&refreshed).Error; err != nil {
+		t.Fatalf("failed to fetch refreshed tokens: %v", err)
+	}
+	groups := map[int]string{}
+	for _, token := range refreshed {
+		groups[token.Id] = token.Group
+	}
+	if groups[oldTokenA.Id] != "new-group" {
+		t.Fatalf("expected first old token group new-group, got %q", groups[oldTokenA.Id])
+	}
+	if groups[oldTokenB.Id] != "new-group" {
+		t.Fatalf("expected second old token group new-group, got %q", groups[oldTokenB.Id])
+	}
+	if groups[otherToken.Id] != "other-group" {
+		t.Fatalf("expected unrelated token group other-group, got %q", groups[otherToken.Id])
 	}
 }

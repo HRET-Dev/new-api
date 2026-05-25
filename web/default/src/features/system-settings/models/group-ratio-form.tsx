@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { memo, useCallback, useState } from 'react'
 import { type UseFormReturn } from 'react-hook-form'
-import { Code2, Eye, HelpCircle } from 'lucide-react'
+import { Code2, Eye, HelpCircle, Replace } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import {
   Accordion,
@@ -45,8 +45,10 @@ import {
 } from '@/components/ui/sheet'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+import { safeJsonParse } from '../utils/json-parser'
 import { GroupRatioVisualEditor } from './group-ratio-visual-editor'
 import { GroupSpecialUsableRulesEditor } from './group-special-usable-editor'
+import { TokenGroupReplaceDialog } from './token-group-replace-dialog'
 
 type GroupFormValues = {
   GroupRatio: string
@@ -72,6 +74,7 @@ export const GroupRatioForm = memo(function GroupRatioForm({
   const { t } = useTranslation()
   const [editMode, setEditMode] = useState<'visual' | 'json'>('visual')
   const [guideOpen, setGuideOpen] = useState(false)
+  const [replaceDialogOpen, setReplaceDialogOpen] = useState(false)
 
   const handleFieldChange = useCallback(
     (field: keyof GroupFormValues, value: string) => {
@@ -87,9 +90,24 @@ export const GroupRatioForm = memo(function GroupRatioForm({
     setEditMode((prev) => (prev === 'visual' ? 'json' : 'visual'))
   }, [])
 
+  const availableGroups = Object.keys(
+    safeJsonParse<Record<string, number>>(form.watch('GroupRatio'), {
+      fallback: {},
+      silent: true,
+    })
+  )
+
   return (
     <div className='space-y-6'>
       <div className='flex flex-wrap justify-end gap-2'>
+        <Button
+          variant='outline'
+          size='sm'
+          onClick={() => setReplaceDialogOpen(true)}
+        >
+          <Replace className='mr-2 h-4 w-4' />
+          {t('Batch replace token groups')}
+        </Button>
         <Button variant='outline' size='sm' onClick={() => setGuideOpen(true)}>
           <HelpCircle className='mr-2 h-4 w-4' />
           {t('Usage guide')}
@@ -110,6 +128,11 @@ export const GroupRatioForm = memo(function GroupRatioForm({
       </div>
 
       <GroupPricingGuide open={guideOpen} onOpenChange={setGuideOpen} />
+      <TokenGroupReplaceDialog
+        open={replaceDialogOpen}
+        onOpenChange={setReplaceDialogOpen}
+        availableGroups={availableGroups}
+      />
 
       <Form {...form}>
         {editMode === 'visual' ? (

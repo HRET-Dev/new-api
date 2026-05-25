@@ -21,7 +21,9 @@ import type {
   ConfirmPaymentComplianceResponse,
   DeleteLogsResponse,
   FetchUpstreamRatiosRequest,
+  ReplaceTokenGroupRequest,
   SystemOptionsResponse,
+  TokenGroupCountResponse,
   UpdateOptionRequest,
   UpdateOptionResponse,
   UpstreamChannelsResponse,
@@ -56,6 +58,22 @@ export async function deleteLogsBefore(targetTimestamp: number) {
 export async function resetModelRatios() {
   const res = await api.post<UpdateOptionResponse>(
     '/api/option/rest_model_ratio'
+  )
+  return res.data
+}
+
+export async function countTokensByGroup(group: string) {
+  const params = new URLSearchParams({ group })
+  const res = await api.get<TokenGroupCountResponse>(
+    `/api/token/group/count?${params.toString()}`
+  )
+  return res.data
+}
+
+export async function replaceTokenGroup(request: ReplaceTokenGroupRequest) {
+  const res = await api.post<TokenGroupCountResponse>(
+    '/api/token/batch/replace_group',
+    request
   )
   return res.data
 }
