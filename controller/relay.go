@@ -221,6 +221,8 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		}
 
 		if newAPIError == nil {
+			slowTTFTChannelError := *types.NewChannelError(channel.Id, channel.Type, channel.Name, channel.ChannelInfo.IsMultiKey, common.GetContextKeyString(c, constant.ContextKeyChannelKey), channel.GetAutoBan())
+			service.QueueSlowTTFTAutoDisable(relayInfo, slowTTFTChannelError)
 			relayInfo.LastError = nil
 			return
 		}

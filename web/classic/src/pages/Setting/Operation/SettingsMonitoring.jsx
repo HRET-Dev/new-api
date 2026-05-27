@@ -46,6 +46,9 @@ export default function SettingsMonitoring(props) {
     'monitor_setting.auto_test_channel_minutes': 10,
     'monitor_setting.auto_test_disabled_channel_enabled': false,
     'monitor_setting.auto_test_disabled_channel_minutes': 5,
+    'monitor_setting.auto_disable_slow_response_enabled': false,
+    'monitor_setting.auto_disable_slow_response_seconds': 30,
+    'monitor_setting.auto_disable_slow_response_count': 3,
   });
   const refForm = useRef();
   const [inputsRow, setInputsRow] = useState(inputs);
@@ -178,7 +181,8 @@ export default function SettingsMonitoring(props) {
                   onChange={(value) =>
                     setInputs({
                       ...inputs,
-                      'monitor_setting.auto_test_disabled_channel_enabled': value,
+                      'monitor_setting.auto_test_disabled_channel_enabled':
+                        value,
                     })
                   }
                 />
@@ -205,7 +209,7 @@ export default function SettingsMonitoring(props) {
             <Row gutter={16}>
               <Col xs={24} sm={12} md={8} lg={8} xl={8}>
                 <Form.InputNumber
-                  label={t('测试所有渠道的最长响应时间')}
+                  label={t('渠道测试超时时间')}
                   step={1}
                   min={0}
                   suffix={t('秒')}
@@ -235,6 +239,59 @@ export default function SettingsMonitoring(props) {
                     setInputs({
                       ...inputs,
                       QuotaRemindThreshold: String(value),
+                    })
+                  }
+                />
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
+                <Form.Switch
+                  field={'monitor_setting.auto_disable_slow_response_enabled'}
+                  label={t('慢 TTFT 自动禁用')}
+                  size='default'
+                  checkedText='｜'
+                  uncheckedText='〇'
+                  onChange={(value) => {
+                    setInputs({
+                      ...inputs,
+                      'monitor_setting.auto_disable_slow_response_enabled':
+                        value,
+                    });
+                  }}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
+                <Form.InputNumber
+                  label={t('TTFT 超时时间')}
+                  step={1}
+                  min={1}
+                  suffix={t('秒')}
+                  extraText={t('真实流式请求首 Token 时间超过此值会记为慢响应')}
+                  placeholder={''}
+                  field={'monitor_setting.auto_disable_slow_response_seconds'}
+                  onChange={(value) =>
+                    setInputs({
+                      ...inputs,
+                      'monitor_setting.auto_disable_slow_response_seconds':
+                        parseInt(value),
+                    })
+                  }
+                />
+              </Col>
+              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
+                <Form.InputNumber
+                  label={t('连续慢响应次数')}
+                  step={1}
+                  min={1}
+                  extraText={t('达到此次数后异步自动禁用渠道')}
+                  placeholder={''}
+                  field={'monitor_setting.auto_disable_slow_response_count'}
+                  onChange={(value) =>
+                    setInputs({
+                      ...inputs,
+                      'monitor_setting.auto_disable_slow_response_count':
+                        parseInt(value),
                     })
                   }
                 />

@@ -8,10 +8,13 @@ import (
 )
 
 type MonitorSetting struct {
-	AutoTestChannelEnabled        bool    `json:"auto_test_channel_enabled"`
-	AutoTestChannelMinutes        float64 `json:"auto_test_channel_minutes"`
-	AutoTestDisabledChannelEnabled bool   `json:"auto_test_disabled_channel_enabled"`
+	AutoTestChannelEnabled         bool    `json:"auto_test_channel_enabled"`
+	AutoTestChannelMinutes         float64 `json:"auto_test_channel_minutes"`
+	AutoTestDisabledChannelEnabled bool    `json:"auto_test_disabled_channel_enabled"`
 	AutoTestDisabledChannelMinutes float64 `json:"auto_test_disabled_channel_minutes"`
+	AutoDisableSlowResponseEnabled bool    `json:"auto_disable_slow_response_enabled"`
+	AutoDisableSlowResponseSeconds float64 `json:"auto_disable_slow_response_seconds"`
+	AutoDisableSlowResponseCount   int     `json:"auto_disable_slow_response_count"`
 }
 
 // 默认配置
@@ -20,6 +23,9 @@ var monitorSetting = MonitorSetting{
 	AutoTestChannelMinutes:         10,
 	AutoTestDisabledChannelEnabled: false,
 	AutoTestDisabledChannelMinutes: 5,
+	AutoDisableSlowResponseEnabled: false,
+	AutoDisableSlowResponseSeconds: 30,
+	AutoDisableSlowResponseCount:   3,
 }
 
 func init() {

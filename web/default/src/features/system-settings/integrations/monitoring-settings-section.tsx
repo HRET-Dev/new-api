@@ -36,6 +36,7 @@ import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import {
+  SettingsControlGroup,
   SettingsForm,
   SettingsSwitchContent,
   SettingsSwitchItem,
@@ -72,6 +73,15 @@ const monitoringSchema = z
         .number()
         .int()
         .min(1, 'Interval must be at least 1 minute'),
+      auto_disable_slow_response_enabled: z.boolean(),
+      auto_disable_slow_response_seconds: z.coerce
+        .number()
+        .int()
+        .min(1, 'Timeout must be at least 1 second'),
+      auto_disable_slow_response_count: z.coerce
+        .number()
+        .int()
+        .min(1, 'Count must be at least 1'),
     }),
   })
   .superRefine((values, ctx) => {
@@ -118,6 +128,9 @@ type MonitoringSettingsSectionProps = {
     'monitor_setting.auto_test_channel_minutes': number
     'monitor_setting.auto_test_disabled_channel_enabled': boolean
     'monitor_setting.auto_test_disabled_channel_minutes': number
+    'monitor_setting.auto_disable_slow_response_enabled': boolean
+    'monitor_setting.auto_disable_slow_response_seconds': number
+    'monitor_setting.auto_disable_slow_response_count': number
   }
 }
 
@@ -137,6 +150,9 @@ type NormalizedMonitoringValues = {
   'monitor_setting.auto_test_channel_minutes': number
   'monitor_setting.auto_test_disabled_channel_enabled': boolean
   'monitor_setting.auto_test_disabled_channel_minutes': number
+  'monitor_setting.auto_disable_slow_response_enabled': boolean
+  'monitor_setting.auto_disable_slow_response_seconds': number
+  'monitor_setting.auto_disable_slow_response_count': number
 }
 
 const buildFormDefaults = (
@@ -160,6 +176,12 @@ const buildFormDefaults = (
       defaults['monitor_setting.auto_test_disabled_channel_enabled'],
     auto_test_disabled_channel_minutes:
       defaults['monitor_setting.auto_test_disabled_channel_minutes'],
+    auto_disable_slow_response_enabled:
+      defaults['monitor_setting.auto_disable_slow_response_enabled'],
+    auto_disable_slow_response_seconds:
+      defaults['monitor_setting.auto_disable_slow_response_seconds'],
+    auto_disable_slow_response_count:
+      defaults['monitor_setting.auto_disable_slow_response_count'],
   },
 })
 
@@ -187,6 +209,12 @@ const normalizeDefaults = (
     defaults['monitor_setting.auto_test_disabled_channel_enabled'],
   'monitor_setting.auto_test_disabled_channel_minutes':
     defaults['monitor_setting.auto_test_disabled_channel_minutes'],
+  'monitor_setting.auto_disable_slow_response_enabled':
+    defaults['monitor_setting.auto_disable_slow_response_enabled'],
+  'monitor_setting.auto_disable_slow_response_seconds':
+    defaults['monitor_setting.auto_disable_slow_response_seconds'],
+  'monitor_setting.auto_disable_slow_response_count':
+    defaults['monitor_setting.auto_disable_slow_response_count'],
 })
 
 const normalizeFormValues = (
@@ -213,6 +241,12 @@ const normalizeFormValues = (
     values.monitor_setting.auto_test_disabled_channel_enabled,
   'monitor_setting.auto_test_disabled_channel_minutes':
     values.monitor_setting.auto_test_disabled_channel_minutes,
+  'monitor_setting.auto_disable_slow_response_enabled':
+    values.monitor_setting.auto_disable_slow_response_enabled,
+  'monitor_setting.auto_disable_slow_response_seconds':
+    values.monitor_setting.auto_disable_slow_response_seconds,
+  'monitor_setting.auto_disable_slow_response_count':
+    values.monitor_setting.auto_disable_slow_response_count,
 })
 
 export function MonitoringSettingsSection({
@@ -278,109 +312,104 @@ export function MonitoringSettingsSection({
             isSaving={updateOption.isPending}
             saveLabel='Save monitoring rules'
           />
-          <div className='grid gap-6 md:grid-cols-2'>
-            <FormField
-              control={form.control}
-              name='monitor_setting.auto_test_channel_enabled'
-              render={({ field }) => (
-                <SettingsSwitchItem>
-                  <SettingsSwitchContent>
-                    <FormLabel>{t('Scheduled channel tests')}</FormLabel>
+          <div className='grid gap-4 md:grid-cols-2'>
+            <SettingsControlGroup className='space-y-4 p-4'>
+              <FormField
+                control={form.control}
+                name='monitor_setting.auto_test_channel_enabled'
+                render={({ field }) => (
+                  <SettingsSwitchItem>
+                    <SettingsSwitchContent>
+                      <FormLabel>{t('Scheduled channel tests')}</FormLabel>
+                      <FormDescription>
+                        {t(
+                          'Automatically probe all channels in the background'
+                        )}
+                      </FormDescription>
+                    </SettingsSwitchContent>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </SettingsSwitchItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='monitor_setting.auto_test_channel_minutes'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('Test interval (minutes)')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type='number'
+                        min={1}
+                        step={1}
+                        {...safeNumberFieldProps(field)}
+                      />
+                    </FormControl>
                     <FormDescription>
-                      {t('Automatically probe all channels in the background')}
+                      {t('How frequently the system tests all channels')}
                     </FormDescription>
-                  </SettingsSwitchContent>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </SettingsSwitchItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </SettingsControlGroup>
 
-            <FormField
-              control={form.control}
-              name='monitor_setting.auto_test_channel_minutes'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('Test interval (minutes)')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      type='number'
-                      min={1}
-                      step={1}
-                      {...safeNumberFieldProps(field)}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    {t('How frequently the system tests all channels')}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <SettingsControlGroup className='space-y-4 p-4'>
+              <FormField
+                control={form.control}
+                name='monitor_setting.auto_test_disabled_channel_enabled'
+                render={({ field }) => (
+                  <SettingsSwitchItem>
+                    <SettingsSwitchContent>
+                      <FormLabel>
+                        {t('Auto-test disabled channels')}
+                      </FormLabel>
+                      <FormDescription>
+                        {t('Periodically test auto-disabled channels')}
+                      </FormDescription>
+                    </SettingsSwitchContent>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </SettingsSwitchItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name='monitor_setting.auto_test_disabled_channel_enabled'
-              render={({ field }) => (
-                <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
-                  <div className='space-y-0.5'>
-                    <FormLabel className='text-base'>
-                      {t('Auto-test disabled channels')}
+              <FormField
+                control={form.control}
+                name='monitor_setting.auto_test_disabled_channel_minutes'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t('Disabled channel test interval (minutes)')}
                     </FormLabel>
+                    <FormControl>
+                      <Input
+                        type='number'
+                        min={1}
+                        step={1}
+                        {...safeNumberFieldProps(field)}
+                      />
+                    </FormControl>
                     <FormDescription>
-                      {t('Periodically test auto-disabled channels')}
+                      {t(
+                        'How frequently the system retests auto-disabled channels'
+                      )}
                     </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name='monitor_setting.auto_test_disabled_channel_minutes'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {t('Disabled channel test interval (minutes)')}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type='number'
-                      min={1}
-                      step={1}
-                      value={
-                        typeof field.value === 'number' &&
-                        Number.isFinite(field.value)
-                          ? field.value
-                          : ''
-                      }
-                      onChange={(event) =>
-                        field.onChange(event.target.valueAsNumber)
-                      }
-                      name={field.name}
-                      onBlur={field.onBlur}
-                      ref={field.ref}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    {t(
-                      'How frequently the system retests auto-disabled channels'
-                    )}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </SettingsControlGroup>
           </div>
 
           <div className='grid gap-6 md:grid-cols-2'>
@@ -389,7 +418,7 @@ export function MonitoringSettingsSection({
               name='ChannelDisableThreshold'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('Disable threshold (seconds)')}</FormLabel>
+                  <FormLabel>{t('Channel test timeout (seconds)')}</FormLabel>
                   <FormControl>
                     <Input
                       type='number'
@@ -401,7 +430,7 @@ export function MonitoringSettingsSection({
                   </FormControl>
                   <FormDescription>
                     {t(
-                      'Automatically disable channels exceeding this response time'
+                      'Automatically disable channels when scheduled channel tests exceed this duration'
                     )}
                   </FormDescription>
                   <FormMessage />
@@ -433,6 +462,77 @@ export function MonitoringSettingsSection({
             />
           </div>
 
+          <SettingsControlGroup className='space-y-4 p-4'>
+            <FormField
+              control={form.control}
+              name='monitor_setting.auto_disable_slow_response_enabled'
+              render={({ field }) => (
+                <SettingsSwitchItem>
+                  <SettingsSwitchContent>
+                    <FormLabel>{t('Slow TTFT auto-disable')}</FormLabel>
+                    <FormDescription>
+                      {t(
+                        'Track live streaming TTFT in the background without delaying user responses'
+                      )}
+                    </FormDescription>
+                  </SettingsSwitchContent>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </SettingsSwitchItem>
+              )}
+            />
+
+            <div className='grid gap-4 md:grid-cols-2'>
+              <FormField
+                control={form.control}
+                name='monitor_setting.auto_disable_slow_response_seconds'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('TTFT timeout (seconds)')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type='number'
+                        min={1}
+                        step={1}
+                        {...safeNumberFieldProps(field)}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {t('First-token time limit for live streaming requests')}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='monitor_setting.auto_disable_slow_response_count'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('Consecutive slow responses')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type='number'
+                        min={1}
+                        step={1}
+                        {...safeNumberFieldProps(field)}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {t('Disable after this many consecutive TTFT timeouts')}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </SettingsControlGroup>
+
           <div className='grid gap-6 md:grid-cols-2'>
             <FormField
               control={form.control}
@@ -442,7 +542,9 @@ export function MonitoringSettingsSection({
                   <SettingsSwitchContent>
                     <FormLabel>{t('Disable on failure')}</FormLabel>
                     <FormDescription>
-                      {t('Automatically disable channels when tests fail')}
+                      {t(
+                        'Automatically disable channels on matching failure rules'
+                      )}
                     </FormDescription>
                   </SettingsSwitchContent>
                   <FormControl>

@@ -63,6 +63,12 @@ const OPERATIONS_SECTIONS = [
             settings['monitor_setting.auto_test_disabled_channel_enabled'],
           'monitor_setting.auto_test_disabled_channel_minutes':
             settings['monitor_setting.auto_test_disabled_channel_minutes'],
+          'monitor_setting.auto_disable_slow_response_enabled':
+            settings['monitor_setting.auto_disable_slow_response_enabled'],
+          'monitor_setting.auto_disable_slow_response_seconds':
+            settings['monitor_setting.auto_disable_slow_response_seconds'],
+          'monitor_setting.auto_disable_slow_response_count':
+            settings['monitor_setting.auto_disable_slow_response_count'],
         }}
       />
     ),

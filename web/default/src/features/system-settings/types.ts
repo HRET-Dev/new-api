@@ -306,6 +306,9 @@ export type OperationsSettings = {
   'monitor_setting.auto_test_channel_minutes': number
   'monitor_setting.auto_test_disabled_channel_enabled': boolean
   'monitor_setting.auto_test_disabled_channel_minutes': number
+  'monitor_setting.auto_disable_slow_response_enabled': boolean
+  'monitor_setting.auto_disable_slow_response_seconds': number
+  'monitor_setting.auto_disable_slow_response_count': number
   SMTPServer: string
   SMTPPort: string
   SMTPAccount: string
