@@ -33,7 +33,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { SettingsSection } from '../components/settings-section'
 import { useUpdateOption } from '../hooks/use-update-option'
 
 export interface EpusdtSettingsValues {
@@ -142,10 +141,16 @@ export function EpusdtSettingsSection(props: Props) {
   }
 
   return (
-    <SettingsSection
-      title={t('Epusdt Payment Gateway')}
-      description={t('Configure Epusdt crypto payment gateway')}
-    >
+    <div className='space-y-4 pt-4'>
+      <div>
+        <h3 className='text-lg font-medium'>
+          {t('Epusdt Payment Gateway')}
+        </h3>
+        <p className='text-muted-foreground text-sm'>
+          {t('Configure Epusdt crypto payment gateway')}
+        </p>
+      </div>
+
       <Alert>
         <AlertDescription className='text-xs'>
           {t(
@@ -238,6 +243,6 @@ export function EpusdtSettingsSection(props: Props) {
           {loading ? t('Saving...') : t('Save')}
         </Button>
       </div>
-    </SettingsSection>
+    </div>
   )
 }
