@@ -954,7 +954,7 @@ func testAllChannels(notify bool) error {
 			}
 
 			// enable channel
-			if !isChannelEnabled && service.ShouldEnableChannel(newAPIError, channel.Status) {
+			if !isChannelEnabled && result.localErr == nil && service.ShouldEnableChannel(newAPIError, channel.Status) {
 				service.EnableChannel(channel.Id, common.GetContextKeyString(result.context, constant.ContextKeyChannelKey), channel.Name)
 			}
 
@@ -1039,6 +1039,11 @@ var testAutoDisabledChannelsLock sync.Mutex
 var testAutoDisabledChannelsRunning bool
 
 func testAutoDisabledChannels() error {
+	testUserID, err := resolveChannelTestUserID(nil)
+	if err != nil {
+		return err
+	}
+
 	testAutoDisabledChannelsLock.Lock()
 	if testAutoDisabledChannelsRunning {
 		testAutoDisabledChannelsLock.Unlock()
@@ -1048,7 +1053,7 @@ func testAutoDisabledChannels() error {
 	testAutoDisabledChannelsLock.Unlock()
 
 	var channels []*model.Channel
-	err := model.DB.Where("status = ?", common.ChannelStatusAutoDisabled).Find(&channels).Error
+	err = model.DB.Where("status = ?", common.ChannelStatusAutoDisabled).Find(&channels).Error
 	if err != nil {
 		testAutoDisabledChannelsLock.Lock()
 		testAutoDisabledChannelsRunning = false
@@ -1064,8 +1069,8 @@ func testAutoDisabledChannels() error {
 		}()
 
 		for _, channel := range channels {
-			result := testChannel(channel, 0, "", "", shouldUseStreamForAutomaticChannelTest(channel))
-			if service.ShouldEnableChannel(result.newAPIError, channel.Status) {
+			result := testChannel(channel, testUserID, "", "", shouldUseStreamForAutomaticChannelTest(channel))
+			if result.localErr == nil && service.ShouldEnableChannel(result.newAPIError, channel.Status) {
 				service.EnableChannel(channel.Id, common.GetContextKeyString(result.context, constant.ContextKeyChannelKey), channel.Name)
 			}
 			time.Sleep(common.RequestInterval)
